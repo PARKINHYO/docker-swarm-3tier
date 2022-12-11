@@ -4,6 +4,7 @@ services:
   proxy:
     image: dockercloud/haproxy
     deploy:
+      mode: global
       placement:
         constraints: [node.role == manager]
       restart_policy:
