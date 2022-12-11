@@ -1,0 +1,69 @@
+version: "3"
+
+services:
+  proxy:
+    image: dockercloud/haproxy
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    networks:
+      - 3tier
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - httpd
+  httpd:
+    image: ihp001/httpd:latest
+    deploy:
+      replicas: 3
+      placement:
+        constraints: [node.role != manager]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    env_file: 
+      - .env/httpd.env
+    networks:
+      - 3tier
+    depends_on:
+      - tomcat
+  tomcat: 
+    image: ihp001/tomcat:latest
+    deploy: 
+      replicas: 3
+      placement: 
+        constraints: [node.role != manager]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    env_file: 
+      - .env/tomcat.env
+    networks: 
+      - 3tier
+    depends_on: 
+      - mariadb
+  mariadb: 
+    image: ihp001/mariadb:latest
+    deploy: 
+      placement: 
+        constraints: [node.role == manager]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    env_file: 
+      - .env/mariadb.env
+    networks: 
+      - 3tier
+    volumes:
+      - mariadb:/var/lib/mysql
+networks:
+  3tier:
+    external: true
+volumes: 
+  mariadb: 
+    external: true
